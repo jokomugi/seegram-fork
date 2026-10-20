@@ -347,6 +347,7 @@ TopBar::TopBar(
 , _wrap(std::move(descriptor.wrap))
 , _st(st::infoTopBar)
 , _source(descriptor.source)
+, _mainMenu(std::move(descriptor.mainMenu))
 , _savedMessages(_key.savedMessages() != nullptr)
 , _badgeTooltipHide(
 	std::make_unique<base::Timer>([=] { hideBadgeTooltip(); }))
@@ -362,6 +363,11 @@ TopBar::TopBar(
 	})))
 , _badgeContent(_savedMessages
 	? rpl::producer<Badge::Content>(rpl::single(Badge::Content()))
+	: _mainMenu
+	? rpl::producer<Badge::Content>(EmojiStatusIdValue(_peer)
+		| rpl::map([](EmojiStatusId status) {
+			return Badge::Content{ BadgeType::Premium, status };
+		}))
 	: BadgeContentForPeer(_peer))
 , _gifPausedChecker([=, controller = descriptor.controller] {
 	return controller->isGifPausedAtLeastFor(Window::GifPauseReason::Layer);
@@ -372,7 +378,10 @@ TopBar::TopBar(
 	&_peer->session(),
 	_badgeContent.value(),
 	nullptr,
-	_gifPausedChecker))
+	_gifPausedChecker,
+	0,
+	base::flags<BadgeType>::from_raw(-1),
+	_mainMenu ? Badge::Mode::StatusAction : Badge::Mode::Display))
 , _verified(std::make_unique<Badge>(
 	this,
 	st::infoPeerBadge,
@@ -384,13 +393,13 @@ TopBar::TopBar(
 	this, _peer, u"left"_q, !_savedMessages && !_topic))
 , _seeRight(std::make_unique<Fork::SeeTg::Verification::Badges>(
 	this, _peer, u"right"_q, !_savedMessages && !_topic))
-, _hasActions(!_savedMessages
+, _hasActions(!_mainMenu && !_savedMessages
 	&& descriptor.source != Source::Stories
 	&& descriptor.source != Source::Preview
 	&& (_wrap.current() != Wrap::Side || !_peer->isNotificationsUser()))
 , _minForProgress([&] {
-	QWidget::setMinimumHeight(st::infoLayerTopBarHeight);
-	QWidget::setMaximumHeight(_savedMessages
+	QWidget::setMinimumHeight(_mainMenu ? _mainMenu->height : st::infoLayerTopBarHeight);
+	QWidget::setMaximumHeight(_mainMenu ? _mainMenu->height : _savedMessages
 		? st::infoLayerTopBarHeight
 		: _hasActions
 		? st::infoProfileTopBarHeightMax
@@ -493,7 +502,7 @@ TopBar::TopBar(
 	bindStatus();
 
 	_title->setContextCopyText(tr::lng_profile_copy_fullname(tr::now));
-	_title->setSelectable(true);
+	_title->setSelectable(!_mainMenu);
 
 	auto badgeUpdates = rpl::producer<>(rpl::merge(
 		_seeLeft->updated(), _seeRight->updated()));
@@ -502,8 +511,12 @@ TopBar::TopBar(
 			std::move(badgeUpdates),
 			_badge->updated());
 
-		_badge->setPremiumClickCallback([controller, peer = _peer] {
-			::Settings::ShowEmojiStatusPremium(controller, peer);
+		_badge->setPremiumClickCallback([=, peer = _peer] {
+			if (_mainMenu) {
+				_mainMenu->changeStatus();
+			} else {
+				::Settings::ShowEmojiStatusPremium(controller, peer);
+			}
 		});
 	}
 	if (_verified) {
@@ -527,17 +540,24 @@ TopBar::TopBar(
 		updateLabelsPosition();
 	}, _title->lifetime());
 
-	setupUniqueBadgeTooltip();
+	if (!_mainMenu) {
+		setupUniqueBadgeTooltip();
+	}
 	setupButtons(controller, descriptor.source);
-	if (!_savedMessages && !_topic && descriptor.source == Source::Profile) {
+	if (!_mainMenu && !_savedMessages && !_topic && descriptor.source == Source::Profile) {
 		Fork::SeeTg::Reactions::Setup(this, controller, _peer,
 			rpl::combine(_wrap.value(), _progress.value())
 			| rpl::map([](Wrap wrap, float64 progress) {
 				return (wrap == Wrap::Layer || wrap == Wrap::Side) && progress > 0.95;
 			}), _backToggles.value());
 	}
-	setupSwipeBack(controller);
+	if (!_mainMenu) {
+		setupSwipeBack(controller);
+	}
 	setupUserpicButton(controller);
+	if (_mainMenu) {
+		setupMainMenu();
+	}
 	if (_hasActions) {
 		_peer->session().changes().peerFlagsValue(
 			_peer,
@@ -619,6 +639,46 @@ TopBar::TopBar(
 	if (_forumButton) {
 		_forumButton->show();
 	}
+}
+
+void TopBar::setupMainMenu() {
+	Expects(_peer->isSelf() && _mainMenu->height > 0
+		&& _mainMenu->openProfile && _mainMenu->changeStatus);
+	_mainMenuSurface = Ui::CreateChild<Ui::AbstractButton>(this);
+	_mainMenuSurface->setAccessibleName(tr::lng_menu_my_profile(tr::now));
+	_mainMenuSurface->setFocusPolicy(Qt::StrongFocus);
+	_mainMenuSurface->setPointerCursor(true);
+	_mainMenuSurface->setClickedCallback(_mainMenu->openProfile);
+	_mainMenuSurface->paintRequest() | rpl::on_next([=] {
+		if (_mainMenuSurface->hasFocus()) {
+			auto p = QPainter(_mainMenuSurface);
+			p.setPen(QPen(st::windowActiveTextFg->c, st::lineWidth));
+			const auto inset = st::lineWidth;
+			p.drawRect(_mainMenuSurface->rect().adjusted(inset, inset, -inset, -inset));
+		}
+	}, _mainMenuSurface->lifetime());
+	_mainMenuSurface->events() | rpl::on_next([=](not_null<QEvent*> event) {
+		if (event->type() == QEvent::FocusIn || event->type() == QEvent::FocusOut) {
+			_mainMenuSurface->update();
+		}
+	}, _mainMenuSurface->lifetime());
+	sizeValue() | rpl::on_next([=](QSize size) {
+		_mainMenuSurface->setGeometry(QRect(QPoint(), size));
+	}, _mainMenuSurface->lifetime());
+	std::move(_mainMenu->rightSkip) | rpl::on_next([=](int skip) {
+		_mainMenuRightSkip = skip;
+		updateLabelsPosition();
+	}, lifetime());
+	_mainMenuSurface->show();
+	updateLabelsPosition();
+}
+
+Ui::RpWidget *TopBar::statusWidget() const {
+	return _badge->widget();
+}
+
+Data::CustomEmojiSizeTag TopBar::statusSizeTag() const {
+	return _badge->sizeTag();
 }
 
 void TopBar::setupBirthdayEffect() {
@@ -1261,6 +1321,10 @@ void TopBar::setupUserpicButton(
 	_userpicButton = base::make_unique_q<Userpic>(
 		this,
 		[=] { return _hasStories; });
+	if (_mainMenu) {
+		_userpicButton->setClickedCallback(_mainMenu->openProfile);
+		return;
+	}
 
 	if (_savedMessages) {
 		_userpicButton->setAttribute(Qt::WA_TransparentForMouseEvents, true);
@@ -1961,6 +2025,12 @@ void TopBar::updateLabelsPosition() {
 	updateTabSwapVisibility();
 	updateTabSelectionGeometry();
 	updateTabSearchGeometry();
+	if (_mainMenuSurface) {
+		_mainMenuSurface->raise();
+		if (const auto status = statusWidget()) {
+			status->raise();
+		}
+	}
 }
 
 void TopBar::updateTitlePosition(float64 progressCurrent) {
@@ -1969,7 +2039,9 @@ void TopBar::updateTitlePosition(float64 progressCurrent) {
 	}
 	const auto rightButtonsWidth = calculateRightButtonsWidth();
 
-	const auto reservedRight = anim::interpolate(
+	const auto reservedRight = _mainMenu
+		? _mainMenuRightSkip.current()
+		: anim::interpolate(
 		0,
 		rightButtonsWidth,
 		1. - progressCurrent);
@@ -2037,6 +2109,11 @@ void TopBar::updateTitlePosition(float64 progressCurrent) {
 		titleMostLeft,
 		(width() - totalElementsWidth) / 2,
 		progressCurrent);
+	if (_mainMenu) {
+		titleLeft = std::min(titleLeft, std::max(
+			0,
+			width() - reservedRight - totalElementsWidth));
+	}
 
 	_seeLeft->moveToLeft(
 		titleLeft,
@@ -2126,19 +2203,23 @@ void TopBar::updateStatusPosition(float64 progressCurrent) {
 		statusMostLeft(),
 		(width() - totalElementsWidth) / 2,
 		progressCurrent);
+	const auto menuStatusLeft = _mainMenu
+		? std::max(0, std::min(statusLeft,
+			width() - _mainMenuRightSkip.current() - totalElementsWidth))
+		: statusLeft;
 
 	if (const auto rating = _starsRating.get()) {
-		rating->moveTo(statusLeft, statusTop - st::lineWidth);
+		rating->moveTo(menuStatusLeft, statusTop - st::lineWidth);
 		rating->setOpacity(progressCurrent);
 	}
 	const auto statusShift = _statusShift.current()
 		* std::clamp((progressCurrent) / 0.15, 0., 1.);
 
-	_status->moveToLeft(statusLeft + statusShift, statusTop);
+	_status->moveToLeft(menuStatusLeft + statusShift, statusTop);
 
 	if (_showLastSeen->toggled()) {
 		_showLastSeen->moveToLeft(
-			statusLeft
+			menuStatusLeft
 				+ statusShift
 				+ _status->textMaxWidth()
 				+ st::infoProfileTopBarLastSeenSkip.x(),
@@ -2976,7 +3057,7 @@ void TopBar::paintEvent(QPaintEvent *e) {
 void TopBar::setupButtons(
 		not_null<Window::SessionController*> controller,
 		Source source) {
-	if (source == Source::Preview) {
+	if (_mainMenu || source == Source::Preview) {
 		setRoundEdges(false);
 		return;
 	}
@@ -3556,7 +3637,11 @@ void TopBar::setupNewGifts(
 		entry.button->show();
 
 		entry.button->setClickedCallback([=, giftData = gift, peer = _peer] {
-			::Settings::ShowSavedStarGiftBox(controller, peer, giftData);
+			if (_mainMenu) {
+				_mainMenu->openProfile();
+			} else {
+				::Settings::ShowSavedStarGiftBox(controller, peer, giftData);
+			}
 		});
 
 		_pinnedToTopGifts.push_back(std::move(entry));

@@ -31,6 +31,10 @@ add_test(NAME diagnostic_report_is_sanitized COMMAND "${Python3_EXECUTABLE}"
     $<TARGET_FILE:module_manager_tests> $<TARGET_FILE:module_fixture>)
 add_test(NAME built_in_diagnostic_module COMMAND module_manager_tests
     "${CMAKE_CURRENT_BINARY_DIR}/SeeGramModuleRunner" production)
+add_test(NAME slightly_redesigned_activation COMMAND module_manager_tests
+    "${CMAKE_CURRENT_BINARY_DIR}/SeeGramModuleRunner" production slightly-redesigned)
+add_test(NAME host_integration_failure_is_isolated COMMAND module_manager_tests
+    "${CMAKE_CURRENT_BINARY_DIR}/SeeGramModuleRunner" host-check)
 add_executable(release_policy_tests release_policy_tests.cpp)
 target_link_libraries(release_policy_tests PRIVATE personal_modules)
 add_test(NAME manual_update_release_comparison COMMAND release_policy_tests)

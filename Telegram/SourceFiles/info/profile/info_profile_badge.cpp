@@ -41,13 +41,15 @@ Badge::Badge(
 	EmojiStatusPanel *emojiStatusPanel,
 	Fn<bool()> animationPaused,
 	int customStatusLoopsLimit,
-	base::flags<BadgeType> allowed)
+	base::flags<BadgeType> allowed,
+	Mode mode)
 : _parent(parent)
 , _st(st)
 , _session(session)
 , _emojiStatusPanel(emojiStatusPanel)
 , _customStatusLoopsLimit(customStatusLoopsLimit)
 , _allowed(allowed)
+, _mode(mode)
 , _animationPaused(std::move(animationPaused)) {
 	std::move(
 		content
@@ -64,7 +66,7 @@ Ui::RpWidget *Badge::widget() const {
 
 void Badge::setContent(Content content) {
 	if (!(_allowed & content.badge)
-		|| (!_session->premiumBadgesShown()
+		|| (_mode == Mode::Display && !_session->premiumBadgesShown()
 			&& content.badge == BadgeType::Premium)) {
 		content.badge = BadgeType::None;
 	}
@@ -82,7 +84,29 @@ void Badge::setContent(Content content) {
 		return;
 	}
 	_view.create(_parent);
+	_view->setFocusPolicy(_mode == Mode::StatusAction
+		? Qt::StrongFocus : Qt::NoFocus);
+	if (_mode == Mode::StatusAction) {
+		_view->events() | rpl::on_next([raw = _view.data()](not_null<QEvent*> event) {
+			if (event->type() == QEvent::FocusIn || event->type() == QEvent::FocusOut) {
+				raw->update();
+			}
+		}, _view->lifetime());
+		_view->paintRequest() | rpl::on_next([raw = _view.data()] {
+			if (raw->hasFocus()) {
+				auto p = QPainter(raw);
+				p.setPen(QPen(st::windowActiveTextFg->c, st::lineWidth));
+				const auto inset = st::lineWidth;
+				p.drawRect(raw->rect().adjusted(inset, inset, -inset, -inset));
+			}
+		}, _view->lifetime());
+	}
 	_view->setAccessibleName([&] {
+		if (_mode == Mode::StatusAction) {
+			return (_content.emojiStatusId
+				? tr::lng_menu_change_status
+				: tr::lng_menu_set_status)(tr::now);
+		}
 		switch (_content.badge) {
 		case BadgeType::Verified:
 			return tr::lng_sr_verified_badge(tr::now);

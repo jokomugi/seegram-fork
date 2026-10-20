@@ -12,6 +12,7 @@ include(lib_ui/cmake/generate_styles.cmake)
 include(cmake/generate_numbers.cmake)
 
 set(style_files
+    fork/personal/slightly_redesigned.style
     fork/seetg/seetg_verifications.style
     fork/seetg/seetg_comments.style
     fork/account_profiles.style
@@ -105,6 +106,8 @@ target_precompile_headers(td_ui PRIVATE ${src_loc}/ui/ui_pch.h)
 nice_target_sources(td_ui ${src_loc}
 PRIVATE
     ${style_files}
+    fork/personal/slightly_redesigned.cpp
+    fork/personal/slightly_redesigned.h
 
     boxes/peers/edit_peer_history_visibility_box.cpp
     boxes/peers/edit_peer_history_visibility_box.h

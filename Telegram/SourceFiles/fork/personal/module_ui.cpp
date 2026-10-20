@@ -3,6 +3,7 @@
 #include "fork/personal/identity.h"
 #include "fork/personal/module_manager.h"
 #include "fork/personal/release_checker.h"
+#include "fork/personal/slightly_redesigned.h"
 #include "fork/fork_lang.h"
 #include "fork/settings_rows.h"
 #include "core/application.h"
@@ -102,14 +103,18 @@ public:
 
 };
 
+std::filesystem::path ModuleRunnerPath() {
+	return QDir::cleanPath(QCoreApplication::applicationDirPath()
+		+ u"/../Helpers/SeeGramModuleRunner"_q).toStdString();
+}
+
 Runtime::Runtime()
 : QObject(QCoreApplication::instance())
-, manager({ {
-	"diagnostics", "1.0.0",
-	QDir::cleanPath(QCoreApplication::applicationDirPath()
-		+ u"/../Helpers/SeeGramModuleRunner"_q).toStdString(),
-	{ "diagnostics" },
-} }, {
+, manager({
+	{ "diagnostics", "1.0.0", ModuleRunnerPath(), { "diagnostics" } },
+	{ kSlightlyRedesignedId, "1.0.0", ModuleRunnerPath(),
+		{ kSlightlyRedesignedId }, kModuleInterface, &CheckSidebarIntegration },
+}, {
 	.preferences = (cWorkingDir() + u"tdata/personal_modules.preferences"_q).toStdString(),
 	.applicationVersion = std::string(PERSONAL_SEEGRAM_RELEASE) + "/personal-" + kPersonalVersion,
 }) {
@@ -220,8 +225,10 @@ void FillPlugins(not_null<Ui::VerticalLayout*> content) {
 		auto description = Updates() | rpl::map([id] { return ModuleDescription(id); });
 		const auto button = SettingsRows::AddToggle(
 			content,
-			Updates() | rpl::map([] {
-				return Phrase(u"Plugin diagnostics"_q, u"Диагностика плагинов"_q);
+			Updates() | rpl::map([id] {
+				return id == kSlightlyRedesignedId
+					? u"slightly-redesigned"_q
+					: Phrase(u"Plugin diagnostics"_q, u"Диагностика плагинов"_q);
 			}),
 			rpl::duplicate(description),
 			Updates() | rpl::map([id] {
@@ -243,13 +250,15 @@ void FillPlugins(not_null<Ui::VerticalLayout*> content) {
 				}
 			}
 		}, button->lifetime());
+		Ui::AddSkip(content);
+		SettingsRows::AddDescription(content, Updates() | rpl::map([id] {
+			return id == kSlightlyRedesignedId
+				? Phrase(u"Live profile header and compact sidebar actions. Switching off restores the usual menu."_q,
+					u"Живая шапка профиля и компактные действия в боковом меню. Выключение возвращает обычное меню."_q)
+				: Phrase(u"Checks activation and process health. Does not read chats or send messages."_q,
+					u"Проверяет включение и отклик процесса. Не читает чаты и не отправляет сообщения."_q);
+		}));
 	}
-	Ui::AddSkip(content);
-	SettingsRows::AddDescription(content, Updates() | rpl::map([] {
-		return Phrase(
-			u"The diagnostic plugin checks activation and process health. It does not read chats or send messages."_q,
-			u"Диагностический плагин проверяет включение и отклик процесса. Он не читает чаты и не отправляет сообщения."_q);
-	}));
 	Ui::AddSkip(content);
 	::Settings::AddButtonWithLabel(
 		content,
@@ -284,6 +293,21 @@ rpl::producer<QString> PluginsSection::title() {
 
 void StartModules() {
 	Modules();
+}
+
+bool IsModuleRunning(std::string_view id) {
+	for (const auto &module : Modules().manager.modules()) {
+		if (module.id == id) {
+			return module.state == ModuleState::Running;
+		}
+	}
+	return false;
+}
+
+rpl::producer<bool> ModuleRunningValue(std::string id) {
+	return Updates() | rpl::map([id = std::move(id)] {
+		return IsModuleRunning(id);
+	}) | rpl::distinct_until_changed();
 }
 
 void AddPluginsButton(::Settings::Builder::SectionBuilder &builder) {

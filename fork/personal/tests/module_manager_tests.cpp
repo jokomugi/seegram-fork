@@ -31,6 +31,30 @@ void Await(ModuleManager &manager, Predicate predicate) {
 int main(int argc, char *argv[]) {
 	try {
 		Require(argc >= 2, "Worker fixture path is required");
+		if (argc > 2 && std::string(argv[2]) == "host-check") {
+			static auto available = false;
+			static auto checks = 0;
+			auto manager = ModuleManager({
+				{ "diagnostics", "1.0", argv[1], { "diagnostics" } },
+				{ "slightly-redesigned", "1.0", argv[1], { "slightly-redesigned" }, 1,
+					[] { ++checks; return available; } },
+			});
+			manager.setEnabled("diagnostics", true);
+			manager.setEnabled("slightly-redesigned", true);
+			Await(manager, [](const auto &modules) {
+				return modules[0].state == ModuleState::Running
+					&& modules[1].state == ModuleState::Failed;
+			});
+			Require(manager.modules()[1].error == ModuleError::CheckFailed,
+				"A failed host integration check must reject only its module");
+			available = true;
+			manager.setEnabled("slightly-redesigned", true);
+			Await(manager, [](const auto &modules) {
+				return modules[1].state == ModuleState::Running;
+			});
+			Require(checks == 2, "Re-enabling must repeat the host integration check");
+			return 0;
+		}
 		if (argc > 2 && std::string(argv[2]) == "descriptor-isolation") {
 			const auto descriptor = ::open("/dev/null", O_RDONLY);
 			Require(descriptor >= 0, "Host descriptor must be open");
@@ -73,16 +97,17 @@ int main(int argc, char *argv[]) {
 			return 0;
 		}
 		if (argc > 2 && std::string(argv[2]) == "production") {
+			const auto id = (argc > 3) ? std::string(argv[3]) : "diagnostics";
 			auto manager = ModuleManager({
-				{ "diagnostics", "1.0.0", argv[1], { "diagnostics" } },
+				{ id, "1.0.0", argv[1], { id } },
 			});
-			manager.setEnabled("diagnostics", true);
+			manager.setEnabled(id, true);
 			Await(manager, [](const auto &modules) {
 				return modules[0].state == ModuleState::Running;
 			});
-			manager.setEnabled("diagnostics", false);
+			manager.setEnabled(id, false);
 			Require(manager.modules()[0].state == ModuleState::Disabled,
-				"The production diagnostic module must stop on disable");
+				"The production module must stop on disable");
 			return 0;
 		}
 		if (argc > 2 && std::string(argv[2]) == "diagnostics") {

@@ -2,7 +2,11 @@
 #include <string>
 
 int main(int argc, char *argv[]) {
-	if (argc != 2 || std::string(argv[1]) != "diagnostics") {
+	if (argc != 2) {
+		return 2;
+	}
+	const auto id = std::string(argv[1]);
+	if (id != "diagnostics" && id != "slightly-redesigned") {
 		return 2;
 	}
 	for (auto line = std::string(); std::getline(std::cin, line);) {

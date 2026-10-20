@@ -105,6 +105,12 @@ public:
 	};
 
 	struct Descriptor {
+		struct MainMenu {
+			int height = 0;
+			rpl::producer<int> rightSkip;
+			Fn<void()> openProfile;
+			Fn<void()> changeStatus;
+		};
 		not_null<Window::SessionController*> controller;
 		Key key;
 		rpl::producer<Wrap> wrap;
@@ -113,6 +119,7 @@ public:
 		rpl::producer<bool> backToggles;
 		rpl::producer<> showFinished;
 		rpl::producer<TextWithEntities> customStatus;
+		std::optional<MainMenu> mainMenu;
 	};
 
 	struct AnimatedPatternPoint {
@@ -151,6 +158,8 @@ public:
 		Wrap wrap);
 
 	rpl::producer<std::optional<QColor>> edgeColor() const;
+	[[nodiscard]] Ui::RpWidget *statusWidget() const;
+	[[nodiscard]] Data::CustomEmojiSizeTag statusSizeTag() const;
 
 protected:
 	void resizeEvent(QResizeEvent *e) override;
@@ -239,6 +248,7 @@ private:
 	[[nodiscard]] int calculateRightButtonsWidth() const;
 	[[nodiscard]] const style::FlatLabel &statusStyle() const;
 	void setupStatusWithRating();
+	void setupMainMenu();
 	void bindStatus();
 	[[nodiscard]] TopBarActionButtonStyle mapActionStyle(
 		std::optional<QColor> c) const;
@@ -258,6 +268,9 @@ private:
 	rpl::variable<Wrap> _wrap;
 	const style::InfoTopBar &_st;
 	const Source _source;
+	std::optional<Descriptor::MainMenu> _mainMenu;
+	rpl::variable<int> _mainMenuRightSkip = 0;
+	Ui::AbstractButton *_mainMenuSurface = nullptr;
 	const bool _savedMessages = false;
 
 	std::unique_ptr<base::Timer> _badgeTooltipHide;

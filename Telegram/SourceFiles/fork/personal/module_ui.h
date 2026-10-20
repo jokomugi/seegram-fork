@@ -1,6 +1,8 @@
 #pragma once
 
 #include "settings/settings_type.h"
+#include <string>
+#include <string_view>
 
 namespace Settings::Builder {
 class SectionBuilder;
@@ -17,6 +19,8 @@ class Controller;
 namespace Fork::Personal {
 
 void StartModules();
+[[nodiscard]] bool IsModuleRunning(std::string_view id);
+[[nodiscard]] rpl::producer<bool> ModuleRunningValue(std::string id);
 void AddPluginsButton(::Settings::Builder::SectionBuilder &builder);
 void AddIntroPluginsButton(
 	not_null<Ui::VerticalLayout*> content,

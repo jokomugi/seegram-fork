@@ -37,6 +37,16 @@ void SetupSavedMusic(
 		not_null<Info::Controller*> controller,
 		not_null<PeerData*> peer,
 		rpl::producer<std::optional<QColor>> topBarColor) {
+	SetupSavedMusic(container, peer, std::move(topBarColor), [=] {
+		controller->showSection(Info::Saved::MakeMusic(peer));
+	});
+}
+
+void SetupSavedMusic(
+		not_null<Ui::VerticalLayout*> container,
+		not_null<PeerData*> peer,
+		rpl::producer<std::optional<QColor>> topBarColor,
+		Fn<void()> openMusic) {
 	auto musicValue = Data::SavedMusic::Supported(peer->id)
 		? Data::SavedMusicList(
 			peer,
@@ -51,6 +61,7 @@ void SetupSavedMusic(
 		object_ptr<Ui::SlideWrap<Ui::VerticalLayout>>(
 			container,
 			object_ptr<Ui::VerticalLayout>(container)));
+	divider->toggle(false, anim::type::instant);
 
 	rpl::combine(
 		std::move(musicValue),
@@ -61,21 +72,17 @@ void SetupSavedMusic(
 		while (divider->entity()->count()) {
 			delete divider->entity()->widgetAt(0);
 		}
-		if (item) {
-			if (const auto document = item->media()
-					? item->media()->document()
-					: nullptr) {
-				const auto music = divider->entity()->add(
-					object_ptr<Profile::MusicButton>(
-						divider->entity(),
-						DocumentMusicButtonData(document),
-						[window = controller, peer] {
-							window->showSection(Info::Saved::MakeMusic(peer));
-						}));
-				music->setOverrideBg(color);
-			}
-			divider->toggle(true, anim::type::normal);
+		const auto document = (item && item->media())
+			? item->media()->document() : nullptr;
+		if (document) {
+			const auto music = divider->entity()->add(
+				object_ptr<Profile::MusicButton>(
+					divider->entity(),
+					DocumentMusicButtonData(document),
+					openMusic));
+			music->setOverrideBg(color);
 		}
+		divider->toggle(document != nullptr, anim::type::normal);
 	}, container->lifetime());
 	divider->finishAnimating();
 }

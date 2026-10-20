@@ -159,6 +159,19 @@ struct ModuleManager::Impl {
 			record(entry);
 			return;
 		}
+		if (entry.definition.checkHost) {
+			const auto passed = [&] {
+				try {
+					return entry.definition.checkHost();
+				} catch (...) {
+					return false;
+				}
+			}();
+			if (!passed) {
+				fail(entry, ModuleError::CheckFailed);
+				return;
+			}
+		}
 		record(entry);
 		entry.process = std::make_unique<ModuleProcess>();
 		entry.deadline = std::chrono::steady_clock::now() + options.checkTimeout;

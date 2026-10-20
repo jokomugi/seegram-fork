@@ -19,7 +19,7 @@ omitted:
 
 ## Overview
 
-The reference is SeeGram's existing settings. This personal macOS application
+The references are SeeGram's existing settings, sidebar and full profile. This personal macOS application
 adds modules for one user; product familiarity takes precedence over a separate
 visual identity. The Plugins page shows activation, health and recovery clearly.
 Personal additions support Russian and English; other locales use English.
@@ -63,10 +63,16 @@ headers. Scale through the existing style system; avoid screen-local dimensions.
 | Toggle | Fork::SettingsRows::AddToggle | fork/settings_rows.h | Module health with version and accessible description | Native activation and process failure |
 | Dialog | Ui::GenericBox | Telegram/lib_ui/ui/layers | Plugins before login | Native Close and Escape |
 | File export | FileDialog::GetWritePath | core/file_utilities.h | User-selected JSON path | Native save panel and report validation |
+| Sidebar profile | Info::Profile::TopBar | info/profile/info_profile_top_bar | MainMenu interaction policy, original renderer and live data | Native profile, status and gift clicks |
+| Sidebar actions | Ui::SettingsButton + Settings::AddButtonIcon | window/window_main_menu and settings/settings_common | Four icon-only buttons with the same callbacks, palette and glyphs | Native commands, context menus and keyboard focus |
 
 Settings dimensions flow from Telegram/SourceFiles/settings/settings.style and
 Telegram/lib_ui/ui/layers/layers.style into generated style headers, shared
 settings controls and the personal module view. Palette changes remain upstream.
+The slightly-redesigned module defines its compact geometry in
+fork/personal/slightly_redesigned.style. Profile fonts, decorations and icon
+assets stay owned by the existing profile and menu styles. These values flow
+through generated Qt style headers; no web preview tokens enter the app.
 
 Activation shows Checking, Running or a written failure reason. Failed modules
 stay off. Update checking has Idle, Checking, Current, Available and Failed

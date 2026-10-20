@@ -23,6 +23,7 @@ struct ModuleDefinition {
 	std::filesystem::path executable;
 	std::vector<std::string> arguments;
 	int interfaceVersion = kModuleInterface;
+	bool (*checkHost)() = nullptr;
 };
 
 struct ModuleSnapshot {

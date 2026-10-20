@@ -33,4 +33,10 @@ void SetupSavedMusic(
 	not_null<PeerData*> peer,
 	rpl::producer<std::optional<QColor>> topBarColor);
 
+void SetupSavedMusic(
+	not_null<Ui::VerticalLayout*> container,
+	not_null<PeerData*> peer,
+	rpl::producer<std::optional<QColor>> topBarColor,
+	Fn<void()> openMusic);
+
 } // namespace Info::Saved

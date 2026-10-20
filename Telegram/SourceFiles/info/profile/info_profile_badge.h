@@ -48,6 +48,7 @@ inline constexpr bool is_flag_type(BadgeType) { return true; }
 
 class Badge final {
 public:
+	enum class Mode { Display, StatusAction };
 	struct Content {
 		BadgeType badge = BadgeType::None;
 		EmojiStatusId emojiStatusId;
@@ -63,7 +64,8 @@ public:
 		Fn<bool()> animationPaused,
 		int customStatusLoopsLimit = 0,
 		base::flags<BadgeType> allowed
-			= base::flags<BadgeType>::from_raw(-1));
+			= base::flags<BadgeType>::from_raw(-1),
+		Mode mode = Mode::Display);
 
 	~Badge();
 
@@ -88,6 +90,7 @@ private:
 	const int _customStatusLoopsLimit = 0;
 	std::unique_ptr<Ui::Text::CustomEmoji> _emojiStatus;
 	base::flags<BadgeType> _allowed;
+	const Mode _mode;
 	Content _content;
 	Fn<void()> _premiumClickCallback;
 	Fn<bool()> _animationPaused;

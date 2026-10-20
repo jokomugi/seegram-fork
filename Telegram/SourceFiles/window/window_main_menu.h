@@ -36,6 +36,7 @@ class SlideWrap;
 namespace Info::Profile {
 class Badge;
 class EmojiStatusPanel;
+class TopBar;
 } // namespace Info::Profile
 
 namespace Main {
@@ -69,6 +70,8 @@ private:
 
 	void moveBadge();
 	void setupUserpicButton();
+	void setupRedesignedCover();
+	[[nodiscard]] int coverHeight() const;
 	void setupAccounts();
 	void setupAccountsToggle();
 	void setupSetEmojiStatus();
@@ -88,6 +91,9 @@ private:
 	void drawName(Painter &p);
 
 	const not_null<SessionController*> _controller;
+	const bool _slightlyRedesigned;
+	Ui::VerticalLayout *_profileHeader = nullptr;
+	Info::Profile::TopBar *_redesignedCover = nullptr;
 	object_ptr<Ui::UserpicButton> _userpicButton;
 	Ui::Text::String _name;
 	int _nameVersion = 0;

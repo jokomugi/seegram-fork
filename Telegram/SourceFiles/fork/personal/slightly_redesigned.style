@@ -1,0 +1,8 @@
+using "window/window_main_menu.style";
+
+personalSidebarCoverHeight: 166px;
+personalSidebarAccountsHeight: 44px;
+personalSidebarAction: SettingsButton(mainMenuButton) {
+	height: 44px;
+	padding: margins(0px, 0px, 0px, 0px);
+}
