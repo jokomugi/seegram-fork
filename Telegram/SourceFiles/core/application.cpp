@@ -37,6 +37,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "fork/seetg/seetg_settings.h"
 #include "fork/spy_mode.h"
 #include "fork/settings_stickers.h"
+#include "fork/personal/module_ui.h"
 #include "core/launcher.h"
 #include "core/proxy_rotation_manager.h"
 #include "core/ui_integration.h"
@@ -964,6 +965,9 @@ void Application::startLocalStorage() {
 	Fork::Lang::Start();
 	Fork::SeeTg::Start();
 	Fork::Stickers::Start();
+#ifdef Q_OS_MAC
+	Fork::Personal::StartModules();
+#endif // Q_OS_MAC
 	_saveSettingsTimer.emplace([=] { saveSettings(); });
 	settings().saveDelayedRequests() | rpl::on_next([=] {
 		saveSettingsDelayed();

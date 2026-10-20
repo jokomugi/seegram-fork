@@ -2673,6 +2673,8 @@ else()
     set(output_name "SeeGram")
 endif()
 
+include(${CMAKE_SOURCE_DIR}/fork/personal/app.cmake)
+
 if (CMAKE_GENERATOR STREQUAL Xcode)
     set(bundle_identifier_plist "$(PRODUCT_BUNDLE_IDENTIFIER)")
 else()

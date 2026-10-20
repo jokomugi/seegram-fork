@@ -7,6 +7,7 @@ import platform
 import plistlib
 import shutil
 import subprocess
+import sys
 import tempfile
 
 
@@ -17,6 +18,10 @@ def main():
     if platform.system() != "Darwin":
         raise SystemExit("This script requires macOS")
     root = Path(__file__).resolve().parents[1]
+    personal = root / "fork/personal/build_mac.py"
+    if personal.is_file():
+        subprocess.run([sys.executable, str(personal), *sys.argv[1:]], check=True)
+        return
     build = root / "out/dev-build"
     destination = root / "out/dev/SeeGram Dev.app"
     profile = Path.home() / "Library/Application Support/SeeGramDev"

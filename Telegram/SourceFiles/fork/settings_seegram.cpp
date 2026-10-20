@@ -8,6 +8,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "fork/settings_seegram.h"
 #include "fork/disguise.h"
 #include "fork/settings_disguise.h"
+#include "fork/personal/module_ui.h"
 
 #include "fork/build_counter.h"
 #include "fork/about_seegram.h"
@@ -247,6 +248,9 @@ rpl::producer<QString> MainSection::title() {
 }
 
 void AddSettingsButton(::Settings::Builder::SectionBuilder &builder) {
+#ifdef Q_OS_MAC
+	Personal::AddPluginsButton(builder);
+#endif // Q_OS_MAC
 	if (Disguise::Clean()) return;
 	builder.addSectionButton({
 		.title = Disguise::NameValue(),

@@ -8,6 +8,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #pragma once
 
 #include "base/const_string.h"
+#include "fork/personal/identity.h"
 
 #define TDESKTOP_REQUESTED_ALPHA_VERSION (0ULL)
 
@@ -18,10 +19,10 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #endif // TDESKTOP_ALLOW_CLOSED_ALPHA
 
 // used in Updater.cpp and Setup.iss for Windows
-constexpr auto AppId = "{1C02C497-FAFA-4927-A5F3-8E7FA9A71699}"_cs;
-constexpr auto AppNameOld = "SeeGram Win (Unofficial)"_cs;
-constexpr auto AppName = "SeeGram Desktop"_cs;
-constexpr auto AppFile = "SeeGram"_cs;
+constexpr auto AppId = Fork::Personal::kAppId;
+constexpr auto AppNameOld = Fork::Personal::kAppName;
+constexpr auto AppName = Fork::Personal::kAppName;
+constexpr auto AppFile = Fork::Personal::kAppFile;
 constexpr auto AppVersion = 7003000;
 constexpr auto AppVersionStr = "7.3";
 constexpr auto AppBetaVersion = false;

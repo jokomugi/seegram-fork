@@ -1,0 +1,6 @@
+{
+  "schema": 1,
+  "repository": "https://github.com/seegram/seegram-desktop.git",
+  "release": "v7.3-1",
+  "base_commit": "da2afa903339cdc0c1c4f117860fdf7be1760112"
+}
