@@ -20,6 +20,15 @@ def main():
     args = parser.parse_args()
     if platform.system() != "Darwin":
         raise SystemExit("macOS is required")
+    tests = ROOT / "out/personal-tests"
+    subprocess.run([
+        "cmake", "-S", str(ROOT / "fork/personal/tests"), "-B", str(tests),
+        "-G", "Ninja", "-DCMAKE_BUILD_TYPE=Debug",
+    ], check=True)
+    subprocess.run(["cmake", "--build", str(tests)], check=True)
+    subprocess.run([
+        "ctest", "--test-dir", str(tests), "--output-on-failure",
+    ], check=True)
     build = ROOT / "out/personal-build"
     destination = ROOT / "out/personal" / f"{NAME}.app"
     env = os.environ.copy()

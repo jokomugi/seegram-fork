@@ -2101,6 +2101,9 @@ void Application::startShortcuts() {
 }
 
 void Application::RegisterUrlScheme() {
+	if (!Fork::Personal::kRegisterUrlSchemes) {
+		return;
+	}
 	const auto arguments = Launcher::Instance().customWorkingDir()
 		? u"-workdir \"%1\""_q.arg(cWorkingDir())
 		: QString();
