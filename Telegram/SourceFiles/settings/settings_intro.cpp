@@ -7,6 +7,8 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 */
 #include "settings/settings_intro.h"
 
+#include "fork/personal/module_ui.h"
+
 #include "settings/sections/settings_advanced.h"
 #include "settings/sections/settings_main.h"
 #include "settings/sections/settings_chat.h"
@@ -63,6 +65,9 @@ object_ptr<Ui::RpWidget> CreateIntroSettings(
 
 	Ui::AddDivider(result);
 	Ui::AddSkip(result);
+#ifdef Q_OS_MAC
+	Fork::Personal::AddIntroPluginsButton(result, window);
+#endif // Q_OS_MAC
 	SetupLanguageButton(window, result);
 	SetupConnectionType(window, &window->account(), result);
 	Ui::AddSkip(result);

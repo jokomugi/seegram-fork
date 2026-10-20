@@ -1,4 +1,5 @@
 #include "fork/disguise.h"
+#include "fork/personal/identity.h"
 
 #include "core/application.h"
 #include "fork/seetg/seetg_auth.h"
@@ -55,7 +56,7 @@ rpl::producer<bool> FeaturesValue() {
 
 QString Name() {
 	return Clean() ? u"Telegram"_q
-		: Appearance.name.isEmpty() ? u"SeeGram"_q : Appearance.name;
+		: Appearance.name.isEmpty() ? Personal::kAppName.utf16() : Appearance.name;
 }
 
 QString FullName() {

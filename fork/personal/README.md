@@ -29,8 +29,18 @@ The output is `out/personal/SeeGram Personal.app`. It uses a distinct bundle ID
 and the `SeeGram Personal` application-support folder. It never copies release
 profiles or registers itself as the Telegram link handler. Development updates
 are disabled; changing a bundle identifier alone is insufficient profile isolation.
+The personal development build targets the current Mac architecture and macOS 11 or later.
 The local build command runs the fast module and update-candidate checks first.
 A failing check stops the command before the installed personal app is replaced.
+`--build-only` prepares a runnable copy in `out/personal-test` with its own bundle
+identifier and an explicit disposable `out/personal-test/profile` portable link,
+leaving the personal app and persistent profile intact.
+
+Packaged copies remove debug and local symbol tables before signing. This keeps
+the arm64 mapped image away from the macOS dyld shared-cache region. A layout
+check rejects images above 1536 MiB, including a margin for address randomization.
+The original Debug executable and object files remain in `out/personal-build`
+for debugging; compilation still uses Debug with assertions and no release optimization.
 
 Supply your own Telegram API credentials through the existing ignored
 `fork/private/api_credentials.cmake`, or the matching environment variables.

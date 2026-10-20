@@ -8,16 +8,20 @@
 #include "core/application.h"
 #include "core/file_utilities.h"
 #include "core/version.h"
+#include "lang/lang_keys.h"
 #include "settings/settings_builder.h"
 #include "settings/settings_common_session.h"
 #include "ui/rp_widget.h"
+#include "ui/layers/generic_box.h"
 #include "ui/toast/toast.h"
 #include "ui/ui_utility.h"
 #include "ui/vertical_list.h"
 #include "ui/widgets/buttons.h"
 #include "ui/wrap/vertical_layout.h"
 #include "window/window_session_controller.h"
+#include "window/window_controller.h"
 #include "styles/style_menu_icons.h"
+#include "styles/style_layers.h"
 #include "styles/style_settings.h"
 
 #include <QtCore/QCoreApplication>
@@ -130,6 +134,16 @@ Runtime &Modules() {
 	return *runtime;
 }
 
+QString ModuleDescription(std::string_view id) {
+	for (const auto &snapshot : Modules().manager.modules()) {
+		if (snapshot.id == id) {
+			return u"v"_q + QString::fromStdString(snapshot.version)
+				+ u" · "_q + StatusText(snapshot);
+		}
+	}
+	return QString();
+}
+
 rpl::producer<> Updates() {
 	return rpl::single(rpl::empty)
 		| rpl::then(rpl::merge(Modules().changed.events(), Lang::Changes()));
@@ -155,19 +169,21 @@ void ExportReport() {
 		});
 }
 
-PluginsSection::PluginsSection(QWidget *parent, not_null<Window::SessionController*> controller)
-: Section(parent, controller) {
-	const auto content = Ui::CreateChild<Ui::VerticalLayout>(this);
+void FillPlugins(not_null<Ui::VerticalLayout*> content) {
 	Ui::AddSkip(content);
-	const auto checker = new ReleaseChecker(this);
-	::Settings::AddButtonWithLabel(
+	const auto checker = new ReleaseChecker(content);
+	const auto checkButton = ::Settings::AddButtonWithLabel(
 		content,
 		Updates() | rpl::map([] {
 			return Phrase(u"Check SeeGram updates"_q, u"Проверить обновления SeeGram"_q);
 		}),
 		rpl::single(QString::fromLatin1(PERSONAL_SEEGRAM_RELEASE)),
 		st::settingsButtonNoIcon
-	)->addClickHandler([=] { checker->check(); });
+	);
+	checkButton->addClickHandler([=] { checker->check(); });
+	checker->value() | rpl::on_next([=](const ReleaseCheck &result) {
+		checkButton->setDisabled(result.state == ReleaseCheckState::Checking);
+	}, checkButton->lifetime());
 	SettingsRows::AddDescription(content, rpl::combine(
 		checker->value(),
 		rpl::single(rpl::empty) | rpl::then(Lang::Changes())
@@ -201,20 +217,13 @@ PluginsSection::PluginsSection(QWidget *parent, not_null<Window::SessionControll
 	for (const auto &module : Modules().manager.modules()) {
 		Ui::AddSkip(content);
 		const auto id = module.id;
+		auto description = Updates() | rpl::map([id] { return ModuleDescription(id); });
 		const auto button = SettingsRows::AddToggle(
 			content,
 			Updates() | rpl::map([] {
 				return Phrase(u"Plugin diagnostics"_q, u"Диагностика плагинов"_q);
 			}),
-			Updates() | rpl::map([id] {
-				for (const auto &snapshot : Modules().manager.modules()) {
-					if (snapshot.id == id) {
-						return u"v"_q + QString::fromStdString(snapshot.version)
-							+ u" · "_q + StatusText(snapshot);
-					}
-				}
-				return QString();
-			}),
+			rpl::duplicate(description),
 			Updates() | rpl::map([id] {
 				for (const auto &snapshot : Modules().manager.modules()) {
 					if (snapshot.id == id) {
@@ -223,6 +232,9 @@ PluginsSection::PluginsSection(QWidget *parent, not_null<Window::SessionControll
 				}
 				return false;
 			}));
+		std::move(description) | rpl::on_next([=](const QString &text) {
+			button->setAccessibleDescription(text);
+		}, button->lifetime());
 		button->toggledChanges() | rpl::on_next([id](bool enabled) {
 			for (const auto &snapshot : Modules().manager.modules()) {
 				if (snapshot.id == id && enabled != SwitchedOn(snapshot)) {
@@ -247,6 +259,20 @@ PluginsSection::PluginsSection(QWidget *parent, not_null<Window::SessionControll
 		rpl::single(QString()),
 		st::settingsButtonNoIcon
 	)->addClickHandler([] { ExportReport(); });
+	Ui::AddSkip(content);
+}
+
+void PluginsBox(not_null<Ui::GenericBox*> box) {
+	box->setTitle(Updates() | rpl::map([] { return Title(); }));
+	box->setWidth(st::boxWideWidth);
+	FillPlugins(box->verticalLayout());
+	box->addButton(tr::lng_close(), [=] { box->closeBox(); });
+}
+
+PluginsSection::PluginsSection(QWidget *parent, not_null<Window::SessionController*> controller)
+: Section(parent, controller) {
+	const auto content = Ui::CreateChild<Ui::VerticalLayout>(this);
+	FillPlugins(content);
 	Ui::ResizeFitChild(this, content);
 }
 
@@ -266,6 +292,17 @@ void AddPluginsButton(::Settings::Builder::SectionBuilder &builder) {
 		.targetSection = PluginsSection::Id(),
 		.icon = { &st::menuIconSettings },
 	});
+}
+
+void AddIntroPluginsButton(
+		not_null<Ui::VerticalLayout*> content,
+		not_null<Window::Controller*> window) {
+	::Settings::AddButtonWithLabel(
+		content,
+		Updates() | rpl::map([] { return Title(); }),
+		rpl::single(QString()),
+		st::settingsButtonNoIcon
+	)->addClickHandler([=] { window->show(Box(PluginsBox)); });
 }
 
 } // namespace Fork::Personal
