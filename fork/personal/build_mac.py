@@ -86,11 +86,16 @@ def main():
         if destination.exists():
             custom_icon = destination / "Icon\r"
             if custom_icon.is_file():
-                shutil.copy2(custom_icon, app / "Icon\r")
-                try:
-                    os.setxattr(app, "com.apple.FinderInfo", os.getxattr(destination, "com.apple.FinderInfo"))
-                except OSError:
-                    pass
+                subprocess.run(["ditto", str(custom_icon), str(app / "Icon\r")], check=True)
+                finder_info = subprocess.run(
+                    ["xattr", "-px", "com.apple.FinderInfo", str(destination)],
+                    capture_output=True, text=True,
+                )
+                if finder_info.returncode == 0:
+                    subprocess.run([
+                        "xattr", "-wx", "com.apple.FinderInfo",
+                        finder_info.stdout.strip(), str(app),
+                    ], check=True)
         executable = app / "Contents/MacOS" / NAME
         subprocess.run(["strip", "-S", "-x", str(executable)], check=True)
         print(f"Mach-O mapped image: {verify_mapping(executable) // (1024 * 1024)} MiB", flush=True)
