@@ -61,9 +61,9 @@ python3 fork/build-prod-mac.py
 
 This builds the optimized Release configuration for this Mac and stages it in
 `out/personal/SeeGram Personal.app`, preserving the personal profile. It prepares
-missing Release Qt and Crashpad archives first, retaining installed Debug
-archives. Keep the build cache for fast incremental builds. Close the personal
-app before replacement; the builder refuses to replace a running copy.
+missing Release Qt, Crashpad, rnnoise, tde2e and tg_owt archives first, retaining
+installed Debug archives. Keep the build cache for fast incremental builds.
+Close the personal app before replacement; the builder refuses to replace a running copy.
 `--build-only` stages a disposable test copy instead.
 
 ## Ideas 1–4
