@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Prepare optimized native dependencies while preserving installed Debug libraries."""
 import platform
+import shutil
 import subprocess
 from pathlib import Path
 
@@ -79,6 +80,9 @@ def prepare():
         raise SystemExit("Release Qt preparation did not produce every required archive.")
     if not all(path.is_file() and path.stat().st_size for path in crashpad_required):
         raise SystemExit("Release Crashpad preparation did not produce the client and handler.")
+    handler = crashpad / f"out/Release.{platform.machine()}/crashpad_handler"
+    handler.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(output / "crashpad_handler", handler)
     native_library("rnnoise", ("librnnoise.a",), targets=("rnnoise",))
     native_library("tde2e", ("tde2e/libtde2e.a", "tdutils/libtdutils.a"), (
         "-DOPENSSL_FOUND=1",
