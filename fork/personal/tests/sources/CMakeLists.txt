@@ -1,0 +1,16 @@
+cmake_minimum_required(VERSION 3.25)
+project(personal_source_tests LANGUAGES CXX)
+set(CMAKE_CXX_STANDARD 20)
+enable_testing()
+find_package(Qt6 REQUIRED COMPONENTS Core Network)
+find_package(SQLite3 REQUIRED)
+find_package(OpenSSL REQUIRED)
+find_package(ZLIB REQUIRED)
+get_filename_component(root "../../../.." ABSOLUTE)
+add_executable(session_source_tests
+    ../session_source_tests.cpp
+    "${root}/Telegram/SourceFiles/fork/personal/session_source.cpp")
+target_include_directories(session_source_tests PRIVATE "${root}/Telegram/SourceFiles" ${SQLite3_INCLUDE_DIRS})
+target_link_libraries(session_source_tests PRIVATE Qt6::Core Qt6::Network ${SQLite3_LIBRARIES} OpenSSL::Crypto ZLIB::ZLIB)
+target_compile_definitions(session_source_tests PRIVATE FIXTURES_PATH="${CMAKE_CURRENT_SOURCE_DIR}/../fixtures")
+add_test(NAME session_source_read_only COMMAND session_source_tests)

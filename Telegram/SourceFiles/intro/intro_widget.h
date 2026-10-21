@@ -23,6 +23,7 @@ class IconButton;
 class RoundButton;
 class LinkButton;
 class FlatLabel;
+class VerticalLayout;
 template <typename Widget>
 class FadeWrap;
 } // namespace Ui
@@ -135,6 +136,8 @@ private:
 	void backRequested();
 
 	void updateControlsGeometry();
+	void setupImportLinks(not_null<Window::Controller*> controller);
+	void updateImportLinks();
 	[[nodiscard]] not_null<details::Data*> getData() {
 		return &_data;
 	}
@@ -210,6 +213,7 @@ private:
 
 	object_ptr<Ui::FadeWrap<Ui::RoundButton>> _next;
 	object_ptr<Ui::FadeWrap<Ui::LinkButton>> _changeLanguage = { nullptr };
+	Ui::VerticalLayout *_importLinks = nullptr;
 	object_ptr<Ui::FadeWrap<Ui::RoundButton>> _resetAccount = { nullptr };
 	object_ptr<Ui::FadeWrap<Ui::FlatLabel>> _terms = { nullptr };
 

@@ -356,6 +356,9 @@ void QrWidget::setupControls() {
 			contentTop() + st::introQrStepsTop);
 	}, steps->lifetime());
 
+#ifdef Q_OS_MAC
+	setupImportControls();
+#else
 	_skip = Ui::CreateChild<Ui::LinkButton>(
 		this,
 		tr::lng_intro_qr_phone(tr::now));
@@ -367,6 +370,7 @@ void QrWidget::setupControls() {
 			(size.width() - skipWidth) / 2,
 			contentTop() + st::introQrSkipTop);
 	}, _skip->lifetime());
+#endif // Q_OS_MAC
 
 	_skip->setClickedCallback([=] { submit(); });
 }
@@ -378,6 +382,9 @@ void QrWidget::setupPasskeyLink() {
 		|| !Platform::WebAuthn::IsSupported()) {
 		return;
 	}
+#ifdef Q_OS_MAC
+	setupImportPasskey();
+#else
 	_passkey = Ui::CreateChild<Ui::LinkButton>(
 		this,
 		tr::lng_intro_qr_passkey(tr::now));
@@ -392,6 +399,7 @@ void QrWidget::setupPasskeyLink() {
 				+ st::introQrSkipTop
 				+ 1.5 * st::normalFont->height));
 	}, _passkey->lifetime());
+#endif // Q_OS_MAC
 
 	_passkey->setClickedCallback([=] {
 		const auto attempt = [=](

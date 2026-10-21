@@ -166,6 +166,11 @@ public:
 		not_null<Main::Account*> account,
 		std::unique_ptr<MTP::Config> config);
 	void writeAccounts();
+	[[nodiscard]] bool commitImportedAccount(
+		not_null<Main::Account*> account,
+		int index,
+		const QByteArray &authorization,
+		const QByteArray &config);
 	void startFromScratch();
 
 	[[nodiscard]] WalletEngineValue readWalletKeyring() const;

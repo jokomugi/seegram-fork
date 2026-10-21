@@ -38,6 +38,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "boxes/abstract_box.h"
 #include "core/update_checker.h"
 #include "core/application.h"
+#include "ui/wrap/vertical_layout.h"
 #include "mtproto/mtproto_dc_options.h"
 #include "window/window_slide_animation.h"
 #include "window/window_connecting_widget.h"
@@ -123,6 +124,9 @@ Widget::Widget(
 	default: Unexpected("Enter point in Intro::Widget::Widget.");
 	}
 
+#ifdef Q_OS_MAC
+	setupImportLinks(controller);
+#endif // Q_OS_MAC
 	setupStep();
 	fixOrder();
 
@@ -866,8 +870,12 @@ void Widget::updateControlsGeometry() {
 	if (_changeLanguage) {
 		_changeLanguage->moveToLeft(
 			(width() - _changeLanguage->width()) / 2,
-			_next->y() + _next->height() + _changeLanguage->height());
+			_next->y() + _next->height() + _changeLanguage->height()
+				+ (_importLinks && getStep()->hasCover() ? _importLinks->height() : 0));
 	}
+#ifdef Q_OS_MAC
+	updateImportLinks();
+#endif // Q_OS_MAC
 	if (_resetAccount) {
 		_resetAccount->moveToLeft(
 			(width() - _resetAccount->width()) / 2,

@@ -96,6 +96,11 @@ public:
 
 	void writeSessionSettings();
 	void writeMtpData();
+	[[nodiscard]] bool importStorageVacant() const;
+	[[nodiscard]] bool writeImportedAuthorization(
+		const QByteArray &serialized,
+		const QByteArray &config);
+	void discardImportedAuthorization();
 	void writeMtpConfig();
 
 	void registerDraftSource(

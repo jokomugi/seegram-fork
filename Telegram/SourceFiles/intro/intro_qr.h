@@ -14,6 +14,8 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 
 namespace Ui {
 class LinkButton;
+class ScrollArea;
+class VerticalLayout;
 } // namespace Ui
 
 namespace Intro {
@@ -44,6 +46,8 @@ private:
 
 	void sendCheckPasswordRequest();
 	void setupControls();
+	void setupImportControls();
+	void setupImportPasskey();
 	void setupPasskeyLink();
 	void refreshCode();
 	void checkForTokenUpdate(const MTPUpdates &updates);
@@ -58,6 +62,8 @@ private:
 	rpl::event_stream<bool> _qrActive;
 	Ui::LinkButton *_skip = nullptr;
 	Ui::LinkButton *_passkey = nullptr;
+	Ui::ScrollArea *_importScroll = nullptr;
+	Ui::VerticalLayout *_loginLinks = nullptr;
 	base::Timer _refreshTimer;
 	mtpRequestId _requestId = 0;
 	bool _forceRefresh = false;

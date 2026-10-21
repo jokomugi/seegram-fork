@@ -98,6 +98,10 @@ public:
 	void maybeActivate(not_null<Main::Account*> account);
 	void activate(not_null<Main::Account*> account);
 	void addActivated(MTP::Environment environment, bool newWindow = false);
+	[[nodiscard]] Account *importAccount(
+		const QByteArray &authorization,
+		const MTPUser &self,
+		MTP::Environment environment);
 
 	// Drops session-less accounts that have no window open for them.
 	void removeRedundantAccounts();
