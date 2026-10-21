@@ -21,6 +21,10 @@ namespace Ui {
 class RippleAnimation;
 } // namespace Ui
 
+namespace Fork::SeeTg::GiftDetails {
+class Snapshot;
+} // namespace Fork::SeeTg::GiftDetails
+
 namespace HistoryView {
 
 class Sticker;
@@ -156,6 +160,9 @@ private:
 	QSize countCurrentSize(int newWidth) override;
 
 	void ensurePhotoMediaCreated() const;
+	void ensureGiftEstimate() const;
+	[[nodiscard]] QString giftAdditionalInfo(QString result) const;
+	void drawGiftEstimate(Painter &p, const PaintContext &context) const;
 
 	[[nodiscard]] TextSelection toTitleSelection(
 		TextSelection selection) const;
@@ -200,6 +207,10 @@ private:
 	std::unique_ptr<Media> _attach;
 	mutable std::shared_ptr<Data::PhotoMedia> _photoMedia;
 	mutable std::unique_ptr<Ui::RippleAnimation> _ripple;
+	mutable std::shared_ptr<Fork::SeeTg::GiftDetails::Snapshot> _giftEstimate;
+	mutable QString _giftSlug;
+	mutable QImage _giftTon;
+	mutable rpl::lifetime _giftLifetime;
 
 	int _dataVersion = -1;
 	int _siteNameLines = 0;

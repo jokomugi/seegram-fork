@@ -8,6 +8,11 @@ object_ptr<Ui::RpWidget> Value(
 	std::shared_ptr<ChatHelpers::Show> show,
 	const QString &slug,
 	object_ptr<Ui::RpWidget> telegram);
+void AddValueRow(
+	not_null<Ui::TableLayout*> table,
+	std::shared_ptr<ChatHelpers::Show> show,
+	const QString &slug,
+	object_ptr<Ui::RpWidget> telegram);
 void BuyButton(not_null<Ui::RoundButton*> button,
 	std::shared_ptr<ChatHelpers::Show> show, const QString &slug, Fn<void()> ready = nullptr);
 } // namespace Fork::SeeTg::GiftDetails

@@ -1720,11 +1720,13 @@ void AddStarGiftTable(
 	}
 	if (unique) {
 		if (unique->value || Fork::SeeTg::Enabled(Fork::SeeTg::Feature::GiftDetails)) {
-			AddTableRow(
+			Fork::SeeTg::GiftDetails::AddValueRow(
 				table,
-				tr::lng_gift_unique_value(),
-				Fork::SeeTg::GiftDetails::Value(table, show, unique->slug,
-					unique->value ? MakeUniqueGiftValueValue(table, show, entry, st) : object_ptr<Ui::RpWidget>(nullptr)));
+				show,
+				unique->slug,
+				unique->value
+					? MakeUniqueGiftValueValue(table, show, entry, st)
+					: object_ptr<Ui::RpWidget>(nullptr));
 		}
 		const auto &original = unique->originalDetails;
 		if (original.recipientId) {

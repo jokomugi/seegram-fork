@@ -661,6 +661,11 @@ PRIVATE
     fork/seetg/seetg_gift_tabs.h
     fork/seetg/seetg_gift_details.cpp
     fork/seetg/seetg_gift_details.h
+    fork/seetg/seetg_gift_estimate.cpp
+    fork/seetg/seetg_gift_estimate.h
+    fork/seetg/seetg_gift_estimate_values.cpp
+    fork/seetg/seetg_gift_estimate_values.h
+    fork/seetg/seetg_web_page.cpp
     fork/seetg/seetg_hidden_shop.cpp
     fork/seetg/seetg_hidden_shop.h
     fork/gift_grid.cpp

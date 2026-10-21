@@ -1336,6 +1336,7 @@ void WebPage::draw(Painter &p, const PaintContext &context) const {
 		).withSelection(context.selected()
 			? FullSelection
 			: TextSelection()));
+		drawGiftEstimate(p, context);
 		const auto pixwidth = _attach->width();
 		const auto pixheight = _attach->height();
 
@@ -1779,7 +1780,7 @@ bool WebPage::isDisplayed() const {
 }
 
 QString WebPage::additionalInfoString() const {
-	return _attach ? _attach->additionalInfoString() : QString();
+	return giftAdditionalInfo(_attach ? _attach->additionalInfoString() : QString());
 }
 
 bool WebPage::toggleSelectionByHandlerClick(const ClickHandlerPtr &p) const {

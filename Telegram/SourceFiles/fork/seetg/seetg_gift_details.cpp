@@ -1,5 +1,6 @@
 #include "fork/seetg/seetg_gift_details.h"
 #include "fork/seetg/seetg_api.h"
+#include "fork/seetg/seetg_gift_estimate.h"
 #include "fork/seetg/seetg_settings.h"
 #include "fork/seetg/seetg_visuals.h"
 #include "fork/fork_lang.h"
@@ -30,14 +31,6 @@
 namespace Fork::SeeTg::GiftDetails {
 namespace {
 using Lang::Key;
-QString Amount(double value) {
-	auto result = QString::number(value, 'f', value >= 1000 ? 0 : value >= 100 ? 1 : 2);
-	if (result.contains('.')) {
-		while (result.endsWith('0')) result.chop(1);
-		if (result.endsWith('.')) result.chop(1);
-	}
-	return result;
-}
 void Load(std::shared_ptr<ChatHelpers::Show> show, const QString &slug, Api::Done done) {
 	const auto split = slug.lastIndexOf('-');
 	const auto num = slug.mid(split + 1).toInt();
@@ -175,8 +168,10 @@ void Explain(std::shared_ptr<ChatHelpers::Show> show, QJsonObject estimate) {
 		row(Key::SeeTgEstimateRange, Amount(estimate[u"low"_q].toDouble()) + u" – "_q + Amount(estimate[u"high"_q].toDouble()) + u" TON"_q);
 
 		const auto confidence = estimate[u"confidence"_q].toString();
-		row(Key::SeeTgEstimateConfidence, Lang::Text(confidence == u"high" ? Key::SeeTgEstimateHigh
-			: confidence == u"medium" ? Key::SeeTgEstimateMedium : Key::SeeTgEstimateLow));
+		if (confidence == u"high" || confidence == u"medium" || confidence == u"low") {
+			row(Key::SeeTgEstimateConfidence, Lang::Text(confidence == u"high" ? Key::SeeTgEstimateHigh
+				: confidence == u"medium" ? Key::SeeTgEstimateMedium : Key::SeeTgEstimateLow));
+		}
 		Ui::AddSkip(content);
 		Ui::AddSubsectionTitle(content, Lang::Value(Key::SeeTgEstimateHow));
 		table = content->add(object_ptr<Ui::TableLayout>(content,
@@ -212,30 +207,115 @@ void Explain(std::shared_ptr<ChatHelpers::Show> show, QJsonObject estimate) {
 }
 } // namespace
 
-object_ptr<Ui::RpWidget> Value(not_null<Ui::TableLayout*> parent, std::shared_ptr<ChatHelpers::Show> show,
-		const QString &slug, object_ptr<Ui::RpWidget> telegram) {
-	if (!Enabled(Feature::GiftDetails)) return telegram;
+object_ptr<Ui::RpWidget> Value(
+		not_null<Ui::TableLayout*> parent,
+		std::shared_ptr<ChatHelpers::Show> show,
+		const QString &slug,
+		object_ptr<Ui::RpWidget> telegram) {
+	if (!Enabled(Feature::GiftDetails)) {
+		return telegram;
+	}
 	auto result = object_ptr<Ui::VerticalLayout>(parent);
 	const auto root = result.data();
-	const auto wrap = root->add(object_ptr<Ui::SlideWrap<Ui::VerticalLayout>>(root, object_ptr<Ui::VerticalLayout>(root)));
+	const auto wrap = root->add(object_ptr<Ui::SlideWrap<Ui::VerticalLayout>>(
+		root,
+		object_ptr<Ui::VerticalLayout>(root)));
 	wrap->toggle(false, anim::type::instant);
-	if (telegram) root->add(Branded(root, std::move(telegram), u"telegram"_q));
-	Load(show, slug, crl::guard(root, [=](const QJsonObject &data) {
-		if (!Enabled(Feature::GiftDetails)) return;
-		const auto items = data[u"searchGifts"_q].toObject()[u"items"_q].toArray();
-		if (items.isEmpty()) return;
-		const auto estimate = items.first().toObject()[u"estimate"_q].toObject();
+	if (telegram) {
+		root->add(Branded(root, std::move(telegram), u"telegram"_q));
+	}
+	const auto snapshot = Watch(&show->session(), slug);
+	if (!snapshot) {
+		return result;
+	}
+	const auto update = [=] {
+		const auto estimate = Estimate(snapshot->data());
 		const auto amount = estimate[u"ton"_q].toDouble();
-		if (!std::isfinite(amount) || amount <= 0) return;
+		const auto valid = Enabled(Feature::GiftDetails)
+			&& std::isfinite(amount) && amount > 0;
 		const auto body = wrap->entity();
-		const auto price = Ui::CreateChild<TonAmount>(parent, u"~"_q + Amount(amount), parent->st().defaultValue);
-		auto value = Ui::MakeValueWithSmallButton(parent, price,
-			Lang::Value(Key::SeeTgEstimateHow) | rpl::map([](const QString &text) { return text.toLower(); }),
-			[=](not_null<Ui::RpWidget*>) { Explain(show, estimate); }, 0, true);
-		body->add(Branded(body, std::move(value.widget), u"seetgbot"_q));
-		wrap->toggle(true, anim::type::instant);
-	}));
+		body->clear();
+		if (valid) {
+			const auto price = Ui::CreateChild<TonAmount>(
+				parent,
+				u"~"_q + Amount(amount),
+				parent->st().defaultValue);
+			auto value = Ui::MakeValueWithSmallButton(
+				parent,
+				price,
+				Lang::Value(Key::SeeTgEstimateHow) | rpl::map([](const QString &text) {
+					return text.toLower();
+				}),
+				[=](not_null<Ui::RpWidget*>) { Explain(show, estimate); },
+				0,
+				true);
+			body->add(Branded(body, std::move(value.widget), u"seetgbot"_q));
+		}
+		wrap->toggle(valid, anim::type::instant);
+	};
+	snapshot->changes() | rpl::on_next(update, root->lifetime());
+	Lang::Changes() | rpl::on_next(update, root->lifetime());
+	update();
 	return result;
+}
+
+void AddValueRow(
+		not_null<Ui::TableLayout*> table,
+		std::shared_ptr<ChatHelpers::Show> show,
+		const QString &slug,
+		object_ptr<Ui::RpWidget> telegram) {
+	if (!Enabled(Feature::GiftDetails)) {
+		Ui::AddTableRow(table, tr::lng_gift_unique_value(), std::move(telegram));
+		return;
+	}
+	auto label = object_ptr<Ui::VerticalLayout>(table);
+	const auto root = label.data();
+	root->add(object_ptr<Ui::FlatLabel>(
+		root,
+		tr::lng_gift_unique_value(),
+		table->st().defaultLabel));
+	const auto details = root->add(object_ptr<Ui::SlideWrap<Ui::VerticalLayout>>(
+		root,
+		object_ptr<Ui::VerticalLayout>(root)));
+	details->toggle(false, anim::type::instant);
+	const auto snapshot = Watch(&show->session(), slug);
+	if (snapshot) {
+		const auto update = [=] {
+			const auto estimate = Estimate(snapshot->data());
+			const auto valid = Enabled(Feature::GiftDetails) && !PreviewText(estimate).isEmpty();
+			const auto content = details->entity();
+			content->clear();
+			if (valid) {
+				for (const auto &[prefix, key] : {
+					std::pair{ u"LOW: "_q, u"ton"_q },
+					std::pair{ u"MAX: "_q, u"high"_q },
+				}) {
+					content->add(object_ptr<TonAmount>(
+						content,
+						prefix + Amount(estimate[key].toDouble()),
+						table->st().defaultLabel));
+				}
+				const auto confidence = estimate[u"confidence"_q].toString();
+				if (confidence == u"high" || confidence == u"medium" || confidence == u"low") {
+					content->add(object_ptr<Ui::FlatLabel>(
+						content,
+						Lang::Text(Key::SeeTgEstimateConfidence) + u": "_q
+							+ Lang::Text(confidence == u"high" ? Key::SeeTgEstimateHigh
+								: confidence == u"medium" ? Key::SeeTgEstimateMedium : Key::SeeTgEstimateLow),
+						table->st().defaultLabel));
+				}
+			}
+			details->toggle(valid, anim::type::instant);
+		};
+		snapshot->changes() | rpl::on_next(update, root->lifetime());
+		Lang::Changes() | rpl::on_next(update, root->lifetime());
+		update();
+	}
+	table->addRow(
+		std::move(label),
+		Value(table, show, slug, std::move(telegram)),
+		st::giveawayGiftCodeLabelMargin,
+		st::giveawayGiftCodeValueMargin);
 }
 
 void BuyButton(not_null<Ui::RoundButton*> button, std::shared_ptr<ChatHelpers::Show> show, const QString &slug, Fn<void()> ready) {

@@ -1,4 +1,6 @@
 #include "fork/personal/session_source.h"
+#include "fork/seetg/seetg_gift_estimate_values.h"
+#include <limits>
 
 #include <QtCore/QCoreApplication>
 #include <QtCore/QFile>
@@ -142,5 +144,17 @@ int main(int argc, char **argv) {
 	Require(rotated.accounts.front().userId == 456 && rotated.accounts.front().error == Error::None);
 	Require(ReadTdata(fixtures + QString::fromLatin1("traversal.zip")).error == Error::UnsafeArchive);
 	Require(ReadTdata(fixtures + QString::fromLatin1("multiple-roots.zip")).error == Error::AmbiguousRoot);
+	using Fork::SeeTg::GiftDetails::PreviewText;
+	auto estimate = QJsonObject{ { QString::fromLatin1("ton"), 12.5 }, { QString::fromLatin1("high"), 17.25 } };
+	Require(PreviewText(estimate) == QString::fromUtf8("12.5–17.25"));
+	estimate[QString::fromLatin1("low")] = 1.;
+	Require(PreviewText(estimate) == QString::fromUtf8("12.5–17.25"));
+	estimate[QString::fromLatin1("high")] = 12.;
+	Require(PreviewText(estimate).isEmpty());
+	estimate[QString::fromLatin1("ton")] = -1.;
+	Require(PreviewText(estimate).isEmpty());
+	estimate[QString::fromLatin1("ton")] = std::numeric_limits<double>::infinity();
+	Require(PreviewText(estimate).isEmpty());
+	Require(PreviewText({}).isEmpty());
 	std::cout << "Session source checks passed: read-only, mixed formats, WAL, bots, duplicates, truncation, ZIP bounds\n";
 }
