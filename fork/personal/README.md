@@ -66,6 +66,15 @@ installed Debug archives. Keep the build cache for fast incremental builds.
 Close the personal app before replacement; the builder refuses to replace a running copy.
 `--build-only` stages a disposable test copy instead.
 
+Check native startup with both modules already enabled in a disposable profile:
+
+```sh
+python3 fork/personal/tests/startup_mac_test.py 'out/personal/SeeGram Personal.app'
+```
+
+This exercises startup restoration, host integration checks, both workers reaching
+Running and a normal quit without using the personal account.
+
 ## Ideas 1–4
 
 The existing `slightly-redesigned` sidebar module remains switchable in Plugins.

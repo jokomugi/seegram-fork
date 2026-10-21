@@ -109,3 +109,9 @@ architecture-specific Crashpad helper path. The preparation script now handles
 these before the app build; the final retry reused the application object cache.
 Intermediate Debug, test and raw Release app bundles were removed after packaging
 verification. Object caches, profiles and one previous personal app remain.
+
+The user's subsequent launch exposed an enabled-module startup-order bug that
+the empty-profile smoke check could not catch. The regression and repair are
+recorded in [startup-enabled-modules.md](startup-enabled-modules.md). The repaired
+Release passed the enabled-module native startup check and the ordinary main
+window was observed; this supersedes the earlier lack of Release startup evidence.

@@ -356,6 +356,9 @@ void Application::run() {
 	Ui::StartCachedCorners();
 	Ui::Emoji::Init();
 	Ui::PreloadTextSpoilerMask(_lifetime);
+#ifdef Q_OS_MAC
+	Fork::Personal::StartModules();
+#endif // Q_OS_MAC
 	startShortcuts();
 	startEmojiImageLoader();
 	startSystemDarkModeViewer();
@@ -965,9 +968,6 @@ void Application::startLocalStorage() {
 	Fork::Lang::Start();
 	Fork::SeeTg::Start();
 	Fork::Stickers::Start();
-#ifdef Q_OS_MAC
-	Fork::Personal::StartModules();
-#endif // Q_OS_MAC
 	_saveSettingsTimer.emplace([=] { saveSettings(); });
 	settings().saveDelayedRequests() | rpl::on_next([=] {
 		saveSettingsDelayed();
