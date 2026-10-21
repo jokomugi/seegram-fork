@@ -60,9 +60,7 @@ Snapshot::Impl::Impl(not_null<Main::Session*> session, QString slug)
 , store(Stores.at(session))
 , slug(std::move(slug)) {
 	EnabledValue(Feature::GiftDetails) | rpl::on_next([=](bool enabled) {
-		if (enabled) {
-			QTimer::singleShot(0, this, [=] { load(); });
-		} else {
+		if (!enabled) {
 			data = {};
 			logo = {};
 			nextAttempt = 0;

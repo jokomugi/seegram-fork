@@ -253,6 +253,11 @@ object_ptr<Ui::RpWidget> Value(
 		}
 		wrap->toggle(valid, anim::type::instant);
 	};
+	EnabledValue(Feature::GiftDetails) | rpl::on_next([=](bool enabled) {
+		if (enabled && root->isVisible()) {
+			snapshot->request();
+		}
+	}, root->lifetime());
 	snapshot->changes() | rpl::on_next(update, root->lifetime());
 	Lang::Changes() | rpl::on_next(update, root->lifetime());
 	update();
@@ -307,6 +312,11 @@ void AddValueRow(
 			}
 			details->toggle(valid, anim::type::instant);
 		};
+		EnabledValue(Feature::GiftDetails) | rpl::on_next([=](bool enabled) {
+			if (enabled && root->isVisible()) {
+				snapshot->request();
+			}
+		}, root->lifetime());
 		snapshot->changes() | rpl::on_next(update, root->lifetime());
 		Lang::Changes() | rpl::on_next(update, root->lifetime());
 		update();

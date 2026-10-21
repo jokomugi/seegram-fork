@@ -161,6 +161,7 @@ private:
 
 	void ensurePhotoMediaCreated() const;
 	void ensureGiftEstimate() const;
+	void releaseGiftEstimate() const;
 	[[nodiscard]] QString giftAdditionalInfo(QString result) const;
 	void drawGiftEstimate(Painter &p, const PaintContext &context) const;
 

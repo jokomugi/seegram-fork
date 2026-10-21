@@ -959,10 +959,12 @@ bool WebPage::hasHeavyPart() const {
 		}
 	}
 	return _photoMedia
+		|| !_giftSlug.isEmpty()
 		|| (_attach ? _attach->hasHeavyPart() : false);
 }
 
 void WebPage::unloadHeavyPart() {
+	releaseGiftEstimate();
 	if (_attach) {
 		_attach->unloadHeavyPart();
 	}

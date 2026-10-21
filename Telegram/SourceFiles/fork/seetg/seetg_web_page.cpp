@@ -5,6 +5,7 @@
 #include "data/data_session.h"
 #include "data/data_web_page.h"
 #include "main/main_session.h"
+#include "history/history.h"
 #include "ui/chat/chat_style.h"
 #include "ui/painter.h"
 #include "ui/rect.h"
@@ -15,35 +16,43 @@
 
 namespace HistoryView {
 
-void WebPage::ensureGiftEstimate() const {
-	const auto slug = _data->uniqueGift ? _data->uniqueGift->slug : QString();
-	if (_giftSlug == slug) {
-		return;
-	}
+void WebPage::releaseGiftEstimate() const {
 	_giftLifetime.destroy();
 	_giftEstimate = nullptr;
-	_giftSlug = slug;
-	if (slug.isEmpty()) {
+	_giftSlug.clear();
+	_giftTon = QImage();
+}
+
+void WebPage::ensureGiftEstimate() const {
+	const auto slug = _data->uniqueGift ? _data->uniqueGift->slug : QString();
+	const auto weak = base::make_weak(this);
+	const auto repaint = [=] {
+		if (weak) {
+			_data->session().data().requestViewRepaint(parent());
+		}
+	};
+	if (_giftSlug != slug) {
+		releaseGiftEstimate();
+		_giftSlug = slug;
+		if (!slug.isEmpty()) {
+			history()->owner().registerHeavyViewPart(_parent);
+			Fork::SeeTg::EnabledValue(Fork::SeeTg::Feature::GiftDetails)
+			| rpl::skip(1)
+			| rpl::on_next([=] {
+				const auto notify = repaint;
+				releaseGiftEstimate();
+				notify();
+			}, _giftLifetime);
+		}
+	}
+	if (slug.isEmpty() || _giftEstimate
+		|| !Fork::SeeTg::Enabled(Fork::SeeTg::Feature::GiftDetails)) {
 		return;
 	}
-	const auto weak = base::make_weak(this);
-	Fork::SeeTg::EnabledValue(Fork::SeeTg::Feature::GiftDetails)
-	| rpl::on_next([=](bool enabled) {
-		if (!weak) {
-			return;
-		}
-		if (enabled && !_giftEstimate) {
-			_giftEstimate = Fork::SeeTg::GiftDetails::Watch(&_data->session(), slug);
-			if (_giftEstimate) {
-				_giftEstimate->changes() | rpl::on_next([=] {
-					if (weak) {
-						_data->session().data().requestViewRepaint(parent());
-					}
-				}, _giftLifetime);
-			}
-		}
-		_data->session().data().requestViewRepaint(parent());
-	}, _giftLifetime);
+	_giftEstimate = Fork::SeeTg::GiftDetails::Watch(&_data->session(), slug);
+	if (_giftEstimate) {
+		_giftEstimate->changes() | rpl::on_next(repaint, _giftLifetime);
+	}
 }
 
 void WebPage::drawGiftEstimate(Painter &p, const PaintContext &context) const {
