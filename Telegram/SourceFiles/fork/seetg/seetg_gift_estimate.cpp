@@ -82,6 +82,10 @@ void Snapshot::Impl::load() {
 	if (!shared) {
 		return;
 	}
+	const auto record = shared->records.find(slug);
+	if (record == shared->records.end() || record->second.use_count() == 1) {
+		return;
+	}
 	if (shared->running >= kMaxParallel) {
 		if (!queued) {
 			queued = true;

@@ -1905,6 +1905,8 @@ int WebPage::bottomInfoPadding() const {
 }
 
 WebPage::~WebPage() {
+	releaseGiftEstimate();
+	_parent->checkHeavyPart();
 	history()->owner().unregisterWebPageView(_data, _parent);
 	if (_composeToneListening) {
 		_data->session().data().customEmojiManager().unregisterListener(
