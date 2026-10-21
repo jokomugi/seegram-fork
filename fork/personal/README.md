@@ -53,6 +53,34 @@ The current diagnostic worker checks startup and process responsiveness; it does
 not prove every future feature's behavior. Feature-specific self-checks and tests
 must be added with that feature.
 
+## Everyday Release app
+
+```sh
+python3 fork/build-prod-mac.py
+```
+
+This builds the optimized Release configuration for this Mac and stages it in
+`out/personal/SeeGram Personal.app`, preserving the personal profile. It prepares
+missing Release Qt and Crashpad archives first, retaining installed Debug
+archives. Keep the build cache for fast incremental builds. Close the personal
+app before replacement; the builder refuses to replace a running copy.
+`--build-only` stages a disposable test copy instead.
+
+## Ideas 1–4
+
+The existing `slightly-redesigned` sidebar module remains switchable in Plugins.
+The start and QR screens also offer local tdata (folder or ZIP), Telethon v7 and
+Pyrogram v2 session import. Parsing is read-only; connecting requires the explicit
+Add action and the source client must stay closed while the shared authorization
+is in use. Cancel stops remaining work; successful accounts already saved remain.
+Source files, keys and arbitrary RPC errors are omitted from diagnostic reports.
+
+Gift estimates use the existing Gift Details setting: message previews show
+`ton–high` with TON and recognized confidence; the full gift row gains LOW, MAX
+and confidence while retaining its existing values and explanation. Missing,
+invalid or unavailable estimates preserve the normal Telegram presentation.
+The SeeGram About panel also links the personal fork.
+
 ## Manual updates
 
 Settings → Plugins → Check SeeGram updates queries the public GitHub release

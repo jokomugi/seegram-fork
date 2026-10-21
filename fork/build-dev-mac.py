@@ -14,6 +14,7 @@ import tempfile
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--build-only", action="store_true", help="Compile without replacing the user's dev app; for disposable test runs.")
+    parser.add_argument("--configuration", choices=("Debug", "Release"), default="Debug")
     options = parser.parse_args()
     if platform.system() != "Darwin":
         raise SystemExit("This script requires macOS")
@@ -22,6 +23,8 @@ def main():
     if personal.is_file():
         subprocess.run([sys.executable, str(personal), *sys.argv[1:]], check=True)
         return
+    if options.configuration != "Debug":
+        raise SystemExit("The personal build configuration is required for Release")
     build = root / "out/dev-build"
     destination = root / "out/dev/SeeGram Dev.app"
     profile = Path.home() / "Library/Application Support/SeeGramDev"
