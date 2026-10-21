@@ -33,6 +33,7 @@ namespace {
 using Lang::Key;
 constexpr auto kSource = "https://github.com/seegram/seegram-desktop";
 constexpr auto kReleases = "https://github.com/seegram/seegram-desktop/releases";
+constexpr auto kPersonalSource = "https://github.com/jokomugi/seegram-fork";
 
 [[nodiscard]] QString SeeGramVersion() {
 	return Disguise::Name() + QChar(' ') + VersionText();
@@ -108,6 +109,14 @@ void Fill(not_null<Ui::GenericBox*> box) {
 			.append(u"\n"_q).append(tr::link(u"GPLv3 + OpenSSL exception"_q,
 				QString::fromLatin1(kSource) + u"/blob/main/LICENSE"_q))), st::seegramAboutNote));
 	credits->setLinksTrusted();
+	Ui::AddSkip(box->verticalLayout(), st::seegramAboutGap);
+	const auto personal = box->addRow(object_ptr<Ui::FlatLabel>(
+		box,
+		rpl::single(tr::bold(tr::marked(u"You are using "_q)
+			.append(tr::link(u"noteven.dev"_q, QString::fromLatin1(kPersonalSource)))
+			.append(u"'s fork"_q))),
+		st::seegramAboutText));
+	personal->setLinksTrusted();
 	box->addButton(Lang::Value(Key::Close), [=] { box->closeBox(); });
 }
 
