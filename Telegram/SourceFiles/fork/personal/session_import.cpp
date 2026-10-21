@@ -504,7 +504,7 @@ Ui::VerticalLayout *CreateLinks(
 				: Phrase(u"Log in with tdata"_q, u"Войти через tdata"_q),
 			st::introLink),
 			{ 0, 0, 0, st::normalFont->height / 2 },
-			style::al_center);
+			Qt::AlignHCenter);
 		button->setClickedCallback([=] {
 			const auto done = crl::guard(parent, [=](QStringList paths) {
 				Open(parent, domain, show, std::move(paths), sessions);

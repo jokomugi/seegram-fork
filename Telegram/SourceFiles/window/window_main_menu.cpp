@@ -226,7 +226,9 @@ void MainMenu::ToggleAccountsButton::paintEvent(QPaintEvent *e) {
 	}
 
 	const auto path = Ui::ToggleUpDownArrowPath(
-		0. + width() - st::mainMenuTogglePosition.x(),
+		0. + width() - (_compact
+			? st::personalSidebarAccountsHeight / 2
+			: st::mainMenuTogglePosition.x()),
 		0. + (_compact ? height() / 2 : height() - st::mainMenuTogglePosition.y()),
 		st::mainMenuToggleSize,
 		st::mainMenuToggleFourStrokes,
@@ -257,7 +259,9 @@ void MainMenu::ToggleAccountsButton::paintUnreadBadge(Painter &p) {
 
 	auto st = Settings::Badge::Style();
 	const auto right = width()
-		- st::mainMenuTogglePosition.x()
+		- (_compact
+			? st::personalSidebarAccountsHeight / 2
+			: st::mainMenuTogglePosition.x())
 		- st::mainMenuToggleSize * 3;
 	const auto top = (_compact ? height() / 2
 		: height() - st::mainMenuTogglePosition.y())
@@ -268,7 +272,9 @@ void MainMenu::ToggleAccountsButton::paintUnreadBadge(Painter &p) {
 
 void MainMenu::ToggleAccountsButton::validateUnreadBadge() {
 	const auto base = st::mainMenuTogglePosition.x()
-		+ 2 * st::mainMenuToggleSize;
+		+ (_compact
+			? st::personalSidebarAccountsHeight / 2
+			: 2 * st::mainMenuToggleSize);
 	if (_toggled) {
 		_rightSkip = base;
 		return;
@@ -374,7 +380,7 @@ MainMenu::MainMenu(
 	object_ptr<Ui::PlainShadow>(_inner.get()))))
 , _menu(_inner->add(
 	object_ptr<Ui::VerticalLayout>(_inner.get()),
-	{ 0, st::mainMenuSkip, 0, 0 }))
+	{ 0, _slightlyRedesigned ? 0 : st::mainMenuSkip, 0, 0 }))
 , _footer(_inner->add(object_ptr<Ui::RpWidget>(_inner.get())))
 , _telegram(
 	Ui::CreateChild<Ui::FlatLabel>(_footer.get(), st::mainMenuTelegramLabel))
@@ -721,7 +727,7 @@ void MainMenu::setupAccountsToggle() {
 	if (_slightlyRedesigned) {
 		_toggleAccounts->setAccessibleName(
 			tr::lng_premium_double_limits_subtitle_accounts(tr::now));
-		_toggleAccounts->setFocusPolicy(Qt::StrongFocus);
+		_toggleAccounts->setFocusPolicy(Qt::TabFocus);
 	}
 	_toggleAccounts->setAcceptBoth();
 	_toggleAccounts->addClickHandler([=](Qt::MouseButton button) {
@@ -782,10 +788,7 @@ void MainMenu::setupMenu() {
 
 		SetupMenuBots(_menu, controller);
 
-		if (_slightlyRedesigned) {
-			_menu->add(object_ptr<Ui::FixedHeightWidget>(_menu, st::lineWidth),
-				{ 0, st::mainMenuSkip, 0, st::mainMenuSkip });
-		} else {
+		if (!_slightlyRedesigned) {
 			_menu->add(object_ptr<Ui::PlainShadow>(_menu),
 				{ 0, st::mainMenuSkip, 0, st::mainMenuSkip });
 		}
@@ -948,11 +951,16 @@ void MainMenu::updateControlsGeometry() {
 	if (_profileHeader) {
 		_profileHeader->resizeToWidth(width());
 		const auto skip = _toggleAccounts->rightSkip();
+		const auto side = st::personalSidebarAccountsHeight;
+		const auto right = st::mainMenuTogglePosition.x() - side / 2;
+		const auto bottom = _redesignedCover->mapTo(
+			this,
+			QPoint(0, _redesignedCover->height())).y();
 		_toggleAccounts->setGeometry(
 			width() - skip,
-			st::personalSidebarCoverHeight - st::personalSidebarAccountsHeight,
-			skip,
-			st::personalSidebarAccountsHeight);
+			bottom - side,
+			skip - right,
+			side);
 		_toggleAccounts->raise();
 	} else {
 		_toggleAccounts->setGeometry(
@@ -970,7 +978,7 @@ void MainMenu::updateControlsGeometry() {
 void MainMenu::updateInnerControlsGeometry() {
 	const auto contentHeight = _accounts->height()
 		+ _shadow->height()
-		+ st::mainMenuSkip
+		+ (_slightlyRedesigned ? 0 : st::mainMenuSkip)
 		+ _menu->height();
 	const auto available = height() - coverHeight() - contentHeight;
 	const auto footerHeight = std::max(

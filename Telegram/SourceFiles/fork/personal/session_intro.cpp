@@ -43,12 +43,14 @@ void QrWidget::setupImportControls() {
 			_loginLinks,
 			tr::lng_intro_qr_phone(tr::now)),
 		{ 0, 0, 0, st::normalFont->height / 2 },
-		style::al_center);
+		Qt::AlignHCenter);
 	const auto imports = Fork::Personal::SessionImport::CreateLinks(
 		_loginLinks,
 		&account().domain(),
 		getData()->controller->uiShow());
-	_loginLinks->add(object_ptr<Ui::VerticalLayout>::fromRaw(imports));
+	_loginLinks->add(
+		object_ptr<Ui::VerticalLayout>::fromRaw(imports),
+		style::al_justify);
 	rpl::combine(sizeValue(), _loginLinks->heightValue()) | rpl::on_next([=](QSize size, int height) {
 		const auto top = contentTop() + st::introQrSkipTop;
 		_importScroll->setGeometry(
@@ -68,7 +70,7 @@ void QrWidget::setupImportPasskey() {
 			_loginLinks,
 			tr::lng_intro_qr_passkey(tr::now)),
 		{ 0, 0, 0, st::normalFont->height / 2 },
-		style::al_center);
+		Qt::AlignHCenter);
 }
 
 } // namespace details

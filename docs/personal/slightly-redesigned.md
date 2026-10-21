@@ -15,8 +15,8 @@ local ideas registry. It changes the active account's ordinary sidebar only.
 - Keep the separate animated account expander, unread count and account list.
 - Place New Group, New Channel, Contacts and Calls in one row. Use the original
   menu icons, renderers and handlers, including the first two context menus.
-- Remove the redundant My Profile and textual emoji-status rows. Keep the
-  divider's spacing before the compact actions, with no separator line.
+- Remove the redundant My Profile and textual emoji-status rows. Keep no
+  separator or leading divider gap before the compact actions.
 - Preserve the remaining menu commands, visibility rules, themes and scrolling.
   Support mode keeps its existing presentation.
 

@@ -115,3 +115,10 @@ the empty-profile smoke check could not catch. The regression and repair are
 recorded in [startup-enabled-modules.md](startup-enabled-modules.md). The repaired
 Release passed the enabled-module native startup check and the ordinary main
 window was observed; this supersedes the earlier lack of Release startup evidence.
+
+The subsequent four screenshot corrections are source-only: the account expander
+hit target follows the actual cover and centers its arrow, mouse clicks no longer
+focus-outline the profile, the compact action row has no leading divider gap,
+and QR login links use horizontal-only center alignment in the native layout.
+No build or native verification of these changes was run, as requested by the user.
+The installed Release still predates these four corrections.

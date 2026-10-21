@@ -646,7 +646,7 @@ void TopBar::setupMainMenu() {
 		&& _mainMenu->openProfile && _mainMenu->changeStatus);
 	_mainMenuSurface = Ui::CreateChild<Ui::AbstractButton>(this);
 	_mainMenuSurface->setAccessibleName(tr::lng_menu_my_profile(tr::now));
-	_mainMenuSurface->setFocusPolicy(Qt::StrongFocus);
+	_mainMenuSurface->setFocusPolicy(Qt::TabFocus);
 	_mainMenuSurface->setPointerCursor(true);
 	_mainMenuSurface->setClickedCallback(_mainMenu->openProfile);
 	_mainMenuSurface->paintRequest() | rpl::on_next([=] {
@@ -658,7 +658,9 @@ void TopBar::setupMainMenu() {
 		}
 	}, _mainMenuSurface->lifetime());
 	_mainMenuSurface->events() | rpl::on_next([=](not_null<QEvent*> event) {
-		if (event->type() == QEvent::FocusIn || event->type() == QEvent::FocusOut) {
+		if (event->type() == QEvent::MouseButtonPress) {
+			_mainMenuSurface->clearFocus();
+		} else if (event->type() == QEvent::FocusIn || event->type() == QEvent::FocusOut) {
 			_mainMenuSurface->update();
 		}
 	}, _mainMenuSurface->lifetime());
